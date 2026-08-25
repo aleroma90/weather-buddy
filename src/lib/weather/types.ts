@@ -16,12 +16,20 @@ export interface ForecastDay {
   precipitationProbabilityMax: number | null;
 }
 
+export interface HourlyPoint {
+  time: string; // ISO local datetime, e.g. 2026-08-25T14:00
+  temperature: number;
+  precipitation: number;
+  precipitationProbability: number | null;
+}
+
 export interface Forecast {
   latitude: number;
   longitude: number;
   timezone: string;
   current: CurrentWeather;
   daily: ForecastDay[];
+  hourly: HourlyPoint[];
 }
 
 export interface GeocodingResult {

@@ -12,6 +12,7 @@ export async function getForecast(lat: number, lon: number): Promise<Forecast> {
     current: "temperature_2m,apparent_temperature,precipitation,weather_code",
     daily:
       "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,apparent_temperature_max,apparent_temperature_min",
+    hourly: "temperature_2m,precipitation,precipitation_probability",
     timezone: "auto",
     forecast_days: "7",
   });
@@ -42,6 +43,13 @@ export async function getForecast(lat: number, lon: number): Promise<Forecast> {
       apparentTempMin: data.daily.apparent_temperature_min[i],
       precipitationProbabilityMax:
         data.daily.precipitation_probability_max?.[i] ?? null,
+    })),
+    hourly: data.hourly.time.map((time: string, i: number) => ({
+      time,
+      temperature: data.hourly.temperature_2m[i],
+      precipitation: data.hourly.precipitation[i],
+      precipitationProbability:
+        data.hourly.precipitation_probability?.[i] ?? null,
     })),
   };
 }

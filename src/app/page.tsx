@@ -5,12 +5,15 @@ import { supabase } from "@/lib/supabase/client";
 import { getDeviceId } from "@/lib/supabase/deviceId";
 import { getForecast } from "@/lib/weather/openMeteo";
 import { computeTemperatureAlerts } from "@/lib/weather/alerts";
+import { reverseGeocode } from "@/lib/geocoding/reverseGeocode";
 import type { Forecast, GeocodingResult } from "@/lib/weather/types";
 import LocationPicker from "@/components/LocationPicker";
 import DailySummary from "@/components/DailySummary";
 import WeeklyForecast from "@/components/WeeklyForecast";
+import HourlyChart from "@/components/HourlyChart";
 import TemperatureAlert from "@/components/TemperatureAlert";
 import ClothingSuggestion from "@/components/ClothingSuggestion";
+import QuoteOfTheDay from "@/components/QuoteOfTheDay";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -27,6 +30,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [barrio, setBarrio] = useState<string | null>(null);
 
   // Resolve device id + initial location on mount
   useEffect(() => {
@@ -98,6 +102,20 @@ export default function Home() {
     run();
   }, [location, deviceId]);
 
+  // Resolve the neighborhood name for the current location, best-effort.
+  useEffect(() => {
+    if (!location) return;
+    let cancelled = false;
+
+    reverseGeocode(location.latitude, location.longitude).then((result) => {
+      if (!cancelled) setBarrio(result.barrio);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location]);
+
   function handleLocationSelect(result: GeocodingResult) {
     const parts = [result.name, result.admin1, result.country].filter(Boolean);
     setLocation({
@@ -143,7 +161,8 @@ export default function Home() {
 
       {forecast && deviceId && (
         <>
-          <DailySummary forecast={forecast} />
+          <DailySummary forecast={forecast} barrio={barrio} />
+          <HourlyChart hourly={forecast.hourly} currentTime={forecast.current.time} />
           <WeeklyForecast daily={forecast.daily} />
           <TemperatureAlert alerts={alerts} />
           <ClothingSuggestion
@@ -152,6 +171,7 @@ export default function Home() {
             weatherCode={forecast.current.weatherCode}
             precipitationProb={forecast.daily[0]?.precipitationProbabilityMax ?? null}
           />
+          <QuoteOfTheDay />
           {!showPicker && (
             <Button
               variant="link"

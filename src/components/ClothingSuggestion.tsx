@@ -12,12 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 
 const PRESET_OPTIONS = [
-  "Camiseta",
-  "Camiseta manga larga",
-  "Jersey",
-  "Chaqueta ligera",
-  "Abrigo grueso",
-  "Impermeable",
+  "Remera",
+  "Remera manga larga",
+  "Buzo",
+  "Campera liviana",
+  "Camperón",
+  "Piloto",
   "Bufanda y guantes",
 ];
 
@@ -149,7 +149,7 @@ export default function ClothingSuggestion({
                 type="text"
                 value={customWorn}
                 onChange={(e) => setCustomWorn(e.target.value)}
-                placeholder="Escribe qué usaste"
+                placeholder="Escribí qué usaste"
                 className="rounded-full"
               />
               <Button type="submit" disabled={saving} className="shrink-0 rounded-full">

@@ -13,7 +13,13 @@ function formatTodayLabel(): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-export default function DailySummary({ forecast }: { forecast: Forecast }) {
+export default function DailySummary({
+  forecast,
+  barrio,
+}: {
+  forecast: Forecast;
+  barrio?: string | null;
+}) {
   const today = forecast.daily[0];
   const { label } = getWeatherCodeInfo(forecast.current.weatherCode);
 
@@ -30,6 +36,9 @@ export default function DailySummary({ forecast }: { forecast: Forecast }) {
               {Math.round(forecast.current.temperature)}°C
             </p>
             <p className="text-sm text-primary-foreground/90">{label}</p>
+            {barrio && (
+              <p className="text-xs text-primary-foreground/75">📍 {barrio}</p>
+            )}
           </div>
         </div>
 

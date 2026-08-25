@@ -3,7 +3,7 @@ import { suggestClothing, type ClothingLogEntry } from "./suggest";
 
 describe("suggestClothing", () => {
   it("returns the default rule when there is no history", () => {
-    expect(suggestClothing(2, 0, [])).toBe("Abrigo grueso y bufanda");
+    expect(suggestClothing(2, 0, [])).toBe("Campera de invierno y bufanda");
   });
 
   it("returns the default rule when fewer than 3 matching samples exist", () => {
@@ -11,7 +11,7 @@ describe("suggestClothing", () => {
       { temperature: 22, weatherCode: 0, actualWorn: "Camiseta" },
       { temperature: 23, weatherCode: 1, actualWorn: "Camiseta" },
     ];
-    expect(suggestClothing(21, 0, history)).toBe("Camiseta de manga corta");
+    expect(suggestClothing(21, 0, history)).toBe("Remera manga corta");
   });
 
   it("returns the most common (mode) worn item once enough matching samples exist", () => {
@@ -31,12 +31,12 @@ describe("suggestClothing", () => {
       { temperature: 22, weatherCode: 61, actualWorn: "Camiseta con paraguas" },
     ];
     // current: 22C, clear -> should not match the <0 or rainy entries
-    expect(suggestClothing(22, 0, history)).toBe("Camiseta de manga corta");
+    expect(suggestClothing(22, 0, history)).toBe("Remera manga corta");
   });
 
   it("returns the default rule for the hottest temperature bucket", () => {
     expect(suggestClothing(35, 0, [])).toBe(
-      "Ropa muy ligera, transpirable y protección solar"
+      "Ropa muy liviana, transpirable y protección solar"
     );
   });
 });
