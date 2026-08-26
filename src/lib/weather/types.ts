@@ -21,6 +21,8 @@ export interface HourlyPoint {
   temperature: number;
   precipitation: number;
   precipitationProbability: number | null;
+  windSpeed: number; // km/h
+  windDirection: number; // degrees, direction the wind is coming from
 }
 
 export interface Forecast {

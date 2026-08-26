@@ -12,7 +12,8 @@ export async function getForecast(lat: number, lon: number): Promise<Forecast> {
     current: "temperature_2m,apparent_temperature,precipitation,weather_code",
     daily:
       "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,apparent_temperature_max,apparent_temperature_min",
-    hourly: "temperature_2m,precipitation,precipitation_probability",
+    hourly:
+      "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_direction_10m",
     timezone: "auto",
     forecast_days: "7",
   });
@@ -50,6 +51,8 @@ export async function getForecast(lat: number, lon: number): Promise<Forecast> {
       precipitation: data.hourly.precipitation[i],
       precipitationProbability:
         data.hourly.precipitation_probability?.[i] ?? null,
+      windSpeed: data.hourly.wind_speed_10m[i],
+      windDirection: data.hourly.wind_direction_10m[i],
     })),
   };
 }

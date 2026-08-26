@@ -10,9 +10,7 @@ import type { Forecast, GeocodingResult } from "@/lib/weather/types";
 import LocationPicker from "@/components/LocationPicker";
 import DailySummary from "@/components/DailySummary";
 import WeeklyForecast from "@/components/WeeklyForecast";
-import HourlyChart from "@/components/HourlyChart";
 import TemperatureAlert from "@/components/TemperatureAlert";
-import ClothingSuggestion from "@/components/ClothingSuggestion";
 import QuoteOfTheDay from "@/components/QuoteOfTheDay";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -135,9 +133,6 @@ export default function Home() {
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
           Weather Buddy
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Tu clima de hoy, sin complicaciones
-        </p>
       </div>
 
       {loading && !forecast && (
@@ -162,15 +157,8 @@ export default function Home() {
       {forecast && deviceId && (
         <>
           <DailySummary forecast={forecast} barrio={barrio} />
-          <HourlyChart hourly={forecast.hourly} currentTime={forecast.current.time} />
           <WeeklyForecast daily={forecast.daily} />
           <TemperatureAlert alerts={alerts} />
-          <ClothingSuggestion
-            deviceId={deviceId}
-            temperature={forecast.current.temperature}
-            weatherCode={forecast.current.weatherCode}
-            precipitationProb={forecast.daily[0]?.precipitationProbabilityMax ?? null}
-          />
           <QuoteOfTheDay />
           {!showPicker && (
             <Button
