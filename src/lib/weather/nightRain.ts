@@ -2,31 +2,37 @@ import type { HourlyPoint } from "./types";
 
 const RAIN_PROBABILITY_THRESHOLD = 30;
 
+function addDaysToDateString(dateStr: string, days: number): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 /**
- * Returns hourly points from `nowIso` through the next occurrence of
- * `endHour` (default 9am) on a later day, i.e. "the rest of the night".
+ * Returns hourly points covering "tonight": from `startHour` (default 9pm)
+ * through `endHour` (default 9am) the next day. Always resolves to the
+ * night currently in progress or the upcoming one, based on `nowIso`.
  */
-export function nightRainHours(
+export function nightWindowHours(
   hourly: HourlyPoint[],
   nowIso: string,
+  startHour = 21,
   endHour = 9
 ): HourlyPoint[] {
-  const currentHour = nowIso.slice(0, 13);
-  const startIndex = hourly.findIndex((point) => point.time.slice(0, 13) >= currentHour);
-  if (startIndex === -1) return [];
+  const nowDate = nowIso.slice(0, 10);
+  const nowHour = Number(nowIso.slice(11, 13));
 
-  const startDate = hourly[startIndex].time.slice(0, 10);
-  const result: HourlyPoint[] = [];
+  const nightStartDate = nowHour < endHour ? addDaysToDateString(nowDate, -1) : nowDate;
+  const nightEndDate = addDaysToDateString(nightStartDate, 1);
 
-  for (let i = startIndex; i < hourly.length; i++) {
-    const point = hourly[i];
-    result.push(point);
-    const date = point.time.slice(0, 10);
-    const hour = Number(point.time.slice(11, 13));
-    if (date !== startDate && hour >= endHour) break;
-  }
+  const startKey = `${nightStartDate}T${String(startHour).padStart(2, "0")}`;
+  const endKey = `${nightEndDate}T${String(endHour).padStart(2, "0")}`;
 
-  return result;
+  return hourly.filter((point) => {
+    const key = point.time.slice(0, 13);
+    return key >= startKey && key <= endKey;
+  });
 }
 
 export type NightRainIntensity = "none" | "light" | "moderate" | "heavy";

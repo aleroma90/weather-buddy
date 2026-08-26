@@ -1,7 +1,7 @@
 "use client";
 
 import type { Forecast } from "@/lib/weather/types";
-import { nightRainHours, summarizeNightRain } from "@/lib/weather/nightRain";
+import { nightWindowHours, summarizeNightRain } from "@/lib/weather/nightRain";
 import {
   Dialog,
   DialogContent,
@@ -10,11 +10,8 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import NightRainChart from "@/components/NightRainChart";
 import { CloudRain } from "lucide-react";
-
-function formatHourLabel(time: string): string {
-  return `${time.slice(11, 13)}h`;
-}
 
 const INTENSITY_LABEL: Record<string, string> = {
   light: "Lluvia débil",
@@ -23,7 +20,7 @@ const INTENSITY_LABEL: Record<string, string> = {
 };
 
 export default function NightRainButton({ forecast }: { forecast: Forecast }) {
-  const points = nightRainHours(forecast.hourly, forecast.current.time, 9);
+  const points = nightWindowHours(forecast.hourly, forecast.current.time, 21, 9);
   const summary = summarizeNightRain(points);
 
   return (
@@ -39,30 +36,32 @@ export default function NightRainButton({ forecast }: { forecast: Forecast }) {
       >
         <CloudRain className="h-6 w-6" />
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
+        {summary.willRain && (
+          <div className="rounded-lg bg-amber-500/15 px-3 py-2 text-center text-sm font-semibold text-amber-700 dark:text-amber-400">
+            🪟 Cerrá la ventana del lavadero
+          </div>
+        )}
+
         <DialogHeader>
           <DialogTitle>¿Lloverá esta noche?</DialogTitle>
-          <DialogDescription>Desde ahora hasta las 9h de mañana.</DialogDescription>
+          <DialogDescription>De 21h a 9h de mañana.</DialogDescription>
         </DialogHeader>
 
         {summary.willRain ? (
-          <div className="space-y-2 text-sm">
-            <p>
-              🌧️ Sí, se espera{" "}
-              <span className="font-semibold">
-                {INTENSITY_LABEL[summary.intensity]?.toLowerCase() ?? "lluvia"}
-              </span>{" "}
-              (hasta {summary.maxProbability}% de probabilidad
-              {summary.totalMm > 0 ? `, ~${summary.totalMm.toFixed(1)}mm` : ""}).
-            </p>
-            <p className="text-muted-foreground">
-              Horarios con mayor chance:{" "}
-              {summary.rainHours.map((point) => formatHourLabel(point.time)).join(", ")}
-            </p>
-          </div>
+          <p className="text-sm">
+            🌧️ Sí, se espera{" "}
+            <span className="font-semibold">
+              {INTENSITY_LABEL[summary.intensity]?.toLowerCase() ?? "lluvia"}
+            </span>{" "}
+            (hasta {summary.maxProbability}% de probabilidad
+            {summary.totalMm > 0 ? `, ~${summary.totalMm.toFixed(1)}mm` : ""}).
+          </p>
         ) : (
           <p className="text-sm">☀️ No se espera lluvia por la noche.</p>
         )}
+
+        <NightRainChart points={points} />
       </DialogContent>
     </Dialog>
   );
