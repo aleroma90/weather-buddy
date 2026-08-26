@@ -12,6 +12,7 @@ import DailySummary from "@/components/DailySummary";
 import WeeklyForecast from "@/components/WeeklyForecast";
 import TemperatureAlert from "@/components/TemperatureAlert";
 import QuoteOfTheDay from "@/components/QuoteOfTheDay";
+import NightRainButton from "@/components/NightRainButton";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -160,6 +161,7 @@ export default function Home() {
           <WeeklyForecast daily={forecast.daily} />
           <TemperatureAlert alerts={alerts} />
           <QuoteOfTheDay />
+          <NightRainButton forecast={forecast} />
           {!showPicker && (
             <Button
               variant="link"

@@ -101,9 +101,9 @@ export default function DailySummary({
             <p className="mt-4 mb-2 text-xs font-medium text-primary-foreground/75">
               🕐 Próximas horas
             </p>
-            <div className="overflow-x-auto">
+            <div className="scrollbar-hide overflow-x-auto overflow-y-hidden pb-1">
               <div
-                className="grid grid-flow-col gap-x-3 gap-y-1.5 text-center"
+                className="grid grid-flow-col gap-x-3 gap-y-2 text-center"
                 style={{
                   gridTemplateRows: "repeat(4, auto)",
                   gridAutoColumns: "44px",
