@@ -14,6 +14,11 @@ create table public.locations (
   updated_at timestamptz not null default now()
 );
 
+-- Desde el 30/10/2026 Supabase no da permisos automáticos a las tablas nuevas:
+-- hay que darlos a mano. Esta app habla desde el navegador con la clave pública (anon).
+grant select, insert, update on public.locations to anon;
+grant select, insert, update, delete on public.locations to service_role;
+
 alter table public.locations enable row level security;
 
 create policy "device can read own location" on public.locations
