@@ -11,7 +11,7 @@ function formatMm(value: number): string {
   return value % 1 === 0 ? String(value) : value.toFixed(1);
 }
 
-export default function NightRainChart({ points }: { points: HourlyPoint[] }) {
+export default function RainChart({ points }: { points: HourlyPoint[] }) {
   if (points.length === 0) return null;
 
   const plotHeight = CHART_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
