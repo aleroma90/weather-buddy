@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getDeviceId } from "@/lib/supabase/deviceId";
 import { getForecast } from "@/lib/weather/openMeteo";
 import { computeTemperatureAlerts } from "@/lib/weather/alerts";
@@ -12,7 +12,13 @@ import DailySummary from "@/components/DailySummary";
 import WeeklyForecast from "@/components/WeeklyForecast";
 import TemperatureAlert from "@/components/TemperatureAlert";
 import QuoteOfTheDay from "@/components/QuoteOfTheDay";
-import NightRainButton from "@/components/NightRainButton";
+import RainWindowCard from "@/components/RainWindowCard";
+import {
+  loadCachedForecast,
+  loadCachedLocation,
+  saveCachedForecast,
+  saveCachedLocation,
+} from "@/lib/cache/localCache";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -31,74 +37,115 @@ export default function Home() {
   const [showPicker, setShowPicker] = useState(false);
   const [barrio, setBarrio] = useState<string | null>(null);
 
-  // Resolve device id + initial location on mount
+  // Resolve the initial location on mount. Cached location/forecast render
+  // instantly; otherwise Supabase and geolocation are queried in parallel.
   useEffect(() => {
     if (!deviceId) return;
 
-    async function resolveLocation() {
-      const { data } = await supabase
-        .from("locations")
-        .select("label, latitude, longitude")
-        .eq("device_id", deviceId)
-        .maybeSingle();
+    const cached = loadCachedLocation();
+    let cancelled = false;
 
-      if (data) {
-        setLocation(data);
-        return;
-      }
+    if (cached) {
+      // Deferred (not a lazy initial state) so the first client render
+      // matches the static HTML and hydration doesn't mismatch.
+      queueMicrotask(() => {
+        if (cancelled) return;
+        const cachedForecast = loadCachedForecast(cached.latitude, cached.longitude);
+        if (cachedForecast) setForecast(cachedForecast);
+        setLocation(cached);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
 
-      if (!navigator.geolocation) {
-        setShowPicker(true);
-        setLoading(false);
-        return;
-      }
-
+    const geoPromise = new Promise<ActiveLocation | null>((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLocation({
+        (pos) =>
+          resolve({
             label: "Tu ubicación actual",
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
-          });
-        },
-        () => {
-          setShowPicker(true);
-          setLoading(false);
-        },
-        { timeout: 8000 }
+          }),
+        () => resolve(null),
+        { timeout: 8000, maximumAge: 30 * 60 * 1000, enableHighAccuracy: false }
       );
+    });
+
+    async function resolveLocation() {
+      if (isSupabaseConfigured) {
+        const { data } = await supabase
+          .from("locations")
+          .select("label, latitude, longitude")
+          .eq("device_id", deviceId)
+          .maybeSingle()
+          .then(
+            (r) => r,
+            () => ({ data: null })
+          );
+        if (cancelled) return;
+        if (data) {
+          setLocation(data);
+          return;
+        }
+      }
+
+      const geo = await geoPromise;
+      if (cancelled) return;
+      if (geo) {
+        setLocation(geo);
+      } else {
+        setShowPicker(true);
+        setLoading(false);
+      }
     }
 
     resolveLocation();
+    return () => {
+      cancelled = true;
+    };
   }, [deviceId]);
 
   // Fetch forecast whenever location changes, and persist location
   useEffect(() => {
     if (!location || !deviceId) return;
+    let cancelled = false;
 
     async function run() {
       setLoading(true);
       setError(null);
+      saveCachedLocation(location!);
       try {
         const f = await getForecast(location!.latitude, location!.longitude);
+        if (cancelled) return;
         setForecast(f);
+        saveCachedForecast(location!.latitude, location!.longitude, f);
 
-        await supabase.from("locations").upsert({
-          device_id: deviceId,
-          label: location!.label,
-          latitude: location!.latitude,
-          longitude: location!.longitude,
-          timezone: f.timezone,
-          updated_at: new Date().toISOString(),
-        });
+        if (isSupabaseConfigured) {
+          // Fire-and-forget: persistence must not delay rendering.
+          void supabase.from("locations").upsert({
+            device_id: deviceId,
+            label: location!.label,
+            latitude: location!.latitude,
+            longitude: location!.longitude,
+            timezone: f.timezone,
+            updated_at: new Date().toISOString(),
+          });
+        }
       } catch {
-        setError("No se pudo cargar el pronóstico del tiempo. Inténtalo de nuevo más tarde.");
+        if (!cancelled) {
+          setError("No se pudo cargar el pronóstico del tiempo. Inténtalo de nuevo más tarde.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     run();
+    return () => {
+      cancelled = true;
+    };
   }, [location, deviceId]);
 
   // Resolve the neighborhood name for the current location, best-effort.
@@ -157,11 +204,11 @@ export default function Home() {
 
       {forecast && deviceId && (
         <>
+          <RainWindowCard forecast={forecast} />
           <DailySummary forecast={forecast} barrio={barrio} />
           <WeeklyForecast daily={forecast.daily} />
           <TemperatureAlert alerts={alerts} />
           <QuoteOfTheDay />
-          <NightRainButton forecast={forecast} />
           {!showPicker && (
             <Button
               variant="link"
